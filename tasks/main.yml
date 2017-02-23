@@ -47,9 +47,9 @@
   no_log: true
   postgresql_user:
     name:             "{{ item.user }}"
-    password:         "{{ item.password }}"
-    db:               "{{ item.db | default(omit) }}"
-    role_attr_flags:  "{{ item.flags | default(omit) }}"
+    password:         "{{ item.pass }}"
+    db:               "{{ item.db     | default(omit) }}"
+    role_attr_flags:  "{{ item.flags  | default(omit) }}"
   with_items: "{{ postgres_users }}"
   when: postgres_create_users
 
