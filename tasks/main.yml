@@ -11,6 +11,14 @@
   apt: name=postgresql-server state=present
   when: ansible_os_family == 'Debian'
 
+  # TODO: test against Debian
+- name: install prereqs
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - python-psycopg2
+
 - name: check if the postgres_data_directory is empty
   command: "ls {{ postgres_data_directory }}"
   register: postgres_data_directory_contents
@@ -20,9 +28,38 @@
   become: true
   when: postgres_data_directory_contents.stdout == ""
 
+- name: template pg_hba.conf
+  template:
+    src:  "pg_hba.conf.j2"
+    dest: "{{ postgres_data_directory }}/pg_hba.conf"
+  notify: reload postgresql
+
 - name: enable and start postgres service
   service:
     name: postgresql
     enabled: yes
     state: started
   become: true
+
+- name: create database users
+  become: true
+  become_user:        "{{ postgres_admin_user }}"
+  no_log: true
+  postgresql_user:
+    name:             "{{ item.user }}"
+    password:         "{{ item.password }}"
+    db:               "{{ item.db | default(omit) }}"
+    role_attr_flags:  "{{ item.flags | default(omit) }}"
+  with_items: "{{ postgres_users }}"
+  when: postgres_create_users
+
+- name: add pg_hba entries
+  include: pg_hba_entry.yml
+  vars:
+    connection_type:  "{{ item.type}}"
+    database:         "{{ item.database }}"
+    user:             "{{ item.user }}"
+    address:          "{{ item.address | default('') }}"
+    auth_method:      "{{ item.method }}"
+    state:            "present"
+  with_items: "{{ postgres_hba_entries }}"

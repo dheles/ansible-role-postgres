@@ -1,3 +1,15 @@
 ---
 postgres_data_directory:  "/var/lib/pgsql/data"
-postgres_user:            "postgres"
+postgres_admin_user:      "postgres"
+postgres_create_users:    "{{ db_create_users | default(false) }}"
+postgres_users:
+  - user:     "example_user"
+    password: "don't_really_use_this"
+    db:       "you_can_omit_db"
+    flags:    "CREATEDB,NOSUPERUSER"
+postgres_hba_entries:
+  - type:     "local"
+    database: "all"
+    user:     "all"
+    address:  ""
+    method:   "md5"
