@@ -50,8 +50,18 @@
     password:         "{{ item.pass }}"
     db:               "{{ item.db     | default(omit) }}"
     role_attr_flags:  "{{ item.flags  | default(omit) }}"
-  with_items: "{{ postgres_users }}"
+  with_items:         "{{ postgres_users }}"
   when: postgres_create_users
+
+- name: create databases
+  become: true
+  become_user:  "{{ postgres_admin_user }}"
+  postgresql_db:
+    name:       "{{ item.name }}"
+    encoding:   "{{ item.encoding | default(omit) }}"
+    owner:      "{{ item.owner    | default(omit) }}"
+  with_items:   "{{ postgres_databases }}"
+  when: postgres_create_databases
 
 - name: add pg_hba entries
   include: pg_hba_entry.yml

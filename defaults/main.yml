@@ -8,6 +8,12 @@ default_db_users:
     pass:     "don't_really_use_this"
     db:       "you_can_omit_db"
     flags:    "CREATEDB,NOSUPERUSER"
+postgres_create_databases:  "{{ db_create_databases | default(false) }}"
+postgres_databases:         "{{ db_databases        | default(default_databases) }}"
+default_databases:
+  - name:     "example_db"
+    encoding: "UTF-8"
+    owner:    "example_user"
 postgres_hba_entries:
   - type:     "local"
     database: "all"
