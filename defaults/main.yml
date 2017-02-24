@@ -1,6 +1,6 @@
 ---
 postgres_data_directory:  "/var/lib/pgsql/data"
-postgres_admin_user:      "postgres"
+postgres_admin_user:      "{{ db_admin_user | default('postgres') }}"
 postgres_create_users:    "{{ db_create_users | default(false) }}"
 postgres_users:           "{{ db_users | default(default_db_users) }}"
 default_db_users:
