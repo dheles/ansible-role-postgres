@@ -11,7 +11,6 @@
     regexp:    '^{{ connection_type }}\s+{{ database }}\s+{{ user }}\s+{{ address }}\s+{{ auth_method }}'
     line:       "{{ connection_type }}   {{ database }}   {{ user }}   {{ address }}   {{ auth_method }}"
     state:      "{{ state }}"
-  become: yes
   become_user: "{{ postgres_admin_user }}"
   notify: reload postgresql
 

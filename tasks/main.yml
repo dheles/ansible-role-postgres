@@ -1,4 +1,6 @@
 ---
+- name: make sure to become true
+  include: ensure_become.yml
 
 - name: include os-specific variables
   include_vars: "{{ ansible_os_family }}.yml"
@@ -25,7 +27,6 @@
 
 - name: initialize
   shell: "postgresql-setup initdb"
-  become: true
   when: postgres_data_directory_contents.stdout == ""
 
 - name: template pg_hba.conf
@@ -39,10 +40,8 @@
     name: postgresql
     enabled: yes
     state: started
-  become: true
 
 - name: create database users
-  become: true
   become_user:        "{{ postgres_admin_user }}"
   no_log: true
   postgresql_user:
@@ -54,7 +53,6 @@
   when: postgres_create_users
 
 - name: create databases
-  become: true
   become_user:  "{{ postgres_admin_user }}"
   postgresql_db:
     name:       "{{ item.name }}"
