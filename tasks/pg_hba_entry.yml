@@ -1,17 +1,21 @@
 ---
 # TODO: cover all 7 formats: https://www.postgresql.org/docs/9.3/static/auth-pg-hba-conf.html
 # vars:
-# - connection_type
+# - (connection) type
 # - database
 # - user
-# - auth_method
+# - address (localhost, ip, or fqdn)
+# - (auth) method
+# NOTE: the regex_replace adds a needed subnet mask to an unmasked ip address
 - name: adjust pg_hba.conf for connection
   lineinfile:
-    dest:       "{{ postgres_data_directory }}/pg_hba.conf"
-    regexp:    '^{{ connection_type }}\s+{{ database }}\s+{{ user }}\s+{{ address }}\s+{{ auth_method }}'
-    line:       "{{ connection_type }}   {{ database }}   {{ user }}   {{ address }}   {{ auth_method }}"
-    state:      "{{ state }}"
+    dest:         "{{ postgres_data_directory }}/pg_hba.conf"
+    regexp:       "^{{ type }}\\s+{{ database }}\\s+{{ user }}\\s+{{ address | regex_replace('^(?P<ip>(?:[0-9]{1,3}\\.){3}[0-9]{1,3})$', '\\g<ip>/32') }}\\s+{{ method }}"
+    line:         "{{ type }}   {{ database }}   {{ user }}   {{ address | regex_replace('^(?P<ip>(?:[0-9]{1,3}\\.){3}[0-9]{1,3})$', '\\g<ip>/32') }}   {{ method }}"
+    state:        "{{ state }}"
+    insertbefore: BOF
   become_user: "{{ postgres_admin_user }}"
   notify: reload postgresql
 
+# TODO: test necessity of this:
 - meta: flush_handlers

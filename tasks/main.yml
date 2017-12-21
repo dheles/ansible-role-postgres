@@ -71,12 +71,12 @@
 - name: add pg_hba entries
   include: pg_hba_entry.yml
   vars:
-    connection_type:  "{{ item.type}}"
-    database:         "{{ item.database }}"
-    user:             "{{ item.user }}"
-    address:          "{{ item.address | default('') }}"
-    auth_method:      "{{ item.method }}"
-    state:            "present"
+    type:     "{{ item.type}}"
+    database: "{{ item.database }}"
+    user:     "{{ item.user }}"
+    address:  "{{ item.address | default('') }}"
+    method:   "{{ item.method }}"
+    state:    "present"
   with_items: "{{ postgres_hba_entries }}"
 
 - name: get postgres version
