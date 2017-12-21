@@ -23,3 +23,5 @@ postgres_hba_entries:
     user:                   "all"
     address:                ""
     method:                 "md5"
+
+postgres_listen_addresses:  "localhost"

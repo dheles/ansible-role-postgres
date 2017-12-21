@@ -29,6 +29,13 @@
   shell: "postgresql-setup initdb"
   when: postgres_data_directory_contents.stdout == ""
 
+- name: adjust postgresql.conf for ip connections
+  lineinfile:
+    dest:       "{{ postgres_data_directory }}/postgresql.conf"
+    regexp:    '^listen_addresses'
+    line:       "listen_addresses = '{{ postgres_listen_addresses }}'"
+    state:      present
+
 - name: template pg_hba.conf
   template:
     src:  "pg_hba.conf.j2"
