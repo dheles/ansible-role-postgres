@@ -12,11 +12,6 @@ none
 
 Role Variables
 --------------
-
-    postgres_data_directory
-
-valid default set for RedHat OS family
-
     postgres_debugging:         "{{ debugging | default(false) }}"
     postgres_data_directory:    "/var/lib/pgsql/data"
     postgres_admin_user:        "{{ db_admin_user   | default('postgres') }}"
@@ -41,6 +36,8 @@ valid default set for RedHat OS family
         user:                   "all"
         address:                ""
         method:                 "md5"
+
+    postgres_listen_addresses:  "localhost"
 
 Dependencies
 ------------
