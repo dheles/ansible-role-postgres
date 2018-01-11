@@ -1,0 +1,8 @@
+---
+# vars:
+#   database: "{{ db_name }}"
+#   user: "{{ db_user }}"
+#   file: "{{ db_backup_file }}"
+
+- name: backup database
+  shell: "pg_dump {% for arg in postgres_backup_args %}--{{ arg }} {% endfor %}-U {{ user }} {{ database }} > {{ file }}"
