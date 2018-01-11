@@ -10,11 +10,13 @@ default_db_users:
     db:                     "you_can_omit_db"
     flags:                  "CREATEDB,NOSUPERUSER"
 
+postgres_default_encoding:  "UTF-8"
+
 postgres_create_databases:  "{{ db_create_databases | default(false) }}"
 postgres_databases:         "{{ db_databases        | default(default_databases) }}"
 default_databases:
   - name:                   "example_db"
-    encoding:               "UTF-8"
+    encoding:               "{{ postgres_default_encoding }}"
     owner:                  "example_user"
 
 postgres_hba_entries:
