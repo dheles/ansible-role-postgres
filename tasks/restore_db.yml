@@ -1,0 +1,30 @@
+---
+# vars:
+#   database: "{{ db_name }}"
+#   user: "{{ db_user }}"
+#   file: "{{ db_backup_file }}"
+#   encoding: "{{ db_encoding }}"
+
+- name: drop db
+  postgresql_db:
+    name: "{{ database }}"
+    state: "absent"
+  become_user: "{{ postgres_admin_user }}"
+
+- name: recreate db
+  postgresql_db:
+    name: "{{ database }}"
+    state: "present"
+    owner: "{{ user }}"
+    encoding: "{{ encoding | default(postgres_default_encoding) }}"
+  become_user: "{{ postgres_admin_user }}"
+
+- name: restore db from file
+  shell: "pg_restore -U {{ user }} -d {{ database }} -n public -O < {{ file }}"
+
+- name: check restored db
+  become_user: "{{ postgres_admin_user }}"
+  shell: "psql -l"
+  register: result
+  failed_when: "'{{ database }}' not in result.stdout"
+  changed_when: false
