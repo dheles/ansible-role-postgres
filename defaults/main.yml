@@ -19,6 +19,15 @@ default_databases:
     encoding:               "{{ postgres_default_encoding }}"
     owner:                  "example_user"
 
+# NOTE: if you template the hba config by setting a value for this variable,
+# you must either include all entries for all environments that will share the
+# database server in the template, or redundantly define them as postgres_hba_entries
+# in each environment's group vars (e.g. test and stage must include each other's
+# entries in their group vars). Otherwise, the template will overwrite any
+# existing entries, and the group's vars will only replace their own entries.
+# Therefore, by default, we are no longer templating a default config, and can
+# thereby allow each environment's group vars to only be responsible for its own entries
+postgres_hba_template:      ""
 postgres_hba_entries:
   - type:                   "local"
     database:               "all"

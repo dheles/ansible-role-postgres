@@ -36,11 +36,13 @@
     line:       "listen_addresses = '{{ postgres_listen_addresses }}'"
     state:      present
 
+# NOTE: see note with postgres_hba_template variable definition in defaults
 - name: template pg_hba.conf
   template:
-    src:  "pg_hba.conf.j2"
+    src:  "{{ postgres_hba_template }}"
     dest: "{{ postgres_data_directory }}/pg_hba.conf"
   notify: reload postgresql
+  when: postgres_hba_template != ""
 
 - name: enable and start postgres service
   service:
