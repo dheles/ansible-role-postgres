@@ -43,3 +43,6 @@ postgres_backup_args:
   - "no-owner"
   - "no-acl"
   - "ignore-version"
+
+postgres_extra_packages:  []
+postgres_extensions:      []
