@@ -96,3 +96,6 @@
   fail:
     msg: "attempted to install postgres, but something went wrong"
   when: "not returned_postgres_version | version_compare('0.0.0', '>')"
+
+- name: install extensions
+  include: extensions.yml
