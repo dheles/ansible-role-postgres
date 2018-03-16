@@ -1,2 +1,8 @@
 ---
-postgres_data_directory: "/var/lib/pgsql/data"
+postgres_data_directory:  "/var/lib/pgsql/data"
+postgres_default_package: "postgresql-server"
+postgres_repo:            "https://download.postgresql.org/pub/repos/yum/{{ postgres_version_major }}.{{ postgres_version_minor }}/redhat/rhel-7-x86_64/pgdg-centos{{ postgres_version_major }}{{ postgres_version_minor }}-{{ postgres_version_major }}.{{ postgres_version_minor }}-{{ postgres_version_patch }}.noarch.rpm"
+postgres_package:         "postgresql{{ postgres_version_major }}{{ postgres_version_minor }}-server"
+# NOTE: these defaults may be overridden for version-specific variants
+postgresql_setup:         "postgresql-setup"
+postgres_service:         "postgresql"

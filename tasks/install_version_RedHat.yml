@@ -1,0 +1,29 @@
+---
+- name: make sure to become true
+  include: ensure_become.yml
+
+- name: include os-specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: install postgres repo
+  yum:
+    name: "{{ postgres_repo }}"
+    state: present
+  become: true
+
+- name: install postgres
+  yum:
+    name: "{{ postgres_package }}"
+    state: present
+
+- name: set PSQL_HOME for all users and put the executable directory in everyone's PATH
+  template:
+    src: "postgres.sh.j2"
+    dest: "/etc/profile.d/postgres.sh"
+
+- name: symlink the data directory for compatibility with the default package
+  file:
+    src:    "{{ postgres_data_directory }}"
+    dest:   "{{ postgres_data_directory_default }}"
+    state:  link
+  become: true

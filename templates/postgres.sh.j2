@@ -1,0 +1,6 @@
+{% if postgres_version_major == 10 %}
+export PSQL_HOME=/usr/pgsql-{{ postgres_version_major }}
+{% else %}
+export PSQL_HOME=/usr/pgsql-{{ postgres_version_major }}.{{ postgres_version_minor }}
+{% endif %}
+export PATH=$PATH:$PSQL_HOME/bin

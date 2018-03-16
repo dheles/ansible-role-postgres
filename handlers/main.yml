@@ -1,5 +1,5 @@
 ---
 - name: reload postgresql
-  shell: "pg_ctl reload -D {{ postgres_data_directory }}"
+  shell: "bash -lc 'pg_ctl reload -D {{ postgres_data_directory }}'"
   become: yes
   become_user: "{{ postgres_admin_user }}"
