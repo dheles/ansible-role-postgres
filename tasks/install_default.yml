@@ -6,7 +6,9 @@
   include_vars: "{{ ansible_os_family }}.yml"
 
 - name: install postgres server on RedHat family
-  yum: name=postgresql-server state=present
+  yum:
+    name: "{{ postgres_default_package }}"
+    state: present
   when: ansible_os_family == 'RedHat'
 
 - name: install postgres server on Debian family
