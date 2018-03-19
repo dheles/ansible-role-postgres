@@ -1,11 +1,13 @@
 ---
 postgres_version_major:     0
 postgres_version_minor:     0
-# TODO: test this for non-RedHat
-postgres_version_patch:     3
+postgres_version_patch:     0
 postgres_version:           "{{ postgres_version_major }}.{{ postgres_version_minor }}.{{ postgres_version_patch }}"
 postgres_debugging:         "{{ debugging | default(false) }}"
-postgres_data_directory:    "/var/lib/pgsql/data"
+postgres_data_directory:    "{{ postgres_default_data_directory }}"
+postgres_bindir:            "{{ postgres_default_bindir }}"
+postgres_setup:             "{{ postgres_default_setup }}"
+postgres_service:           "{{ postgres_default_service }}"
 postgres_admin_user:        "{{ db_admin_user   | default('postgres') }}"
 postgres_create_users:      "{{ db_create_users | default(false) }}"
 postgres_users:             "{{ db_users        | default(default_db_users) }}"
