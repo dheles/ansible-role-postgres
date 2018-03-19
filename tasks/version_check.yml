@@ -34,6 +34,7 @@
   - name: get info on default package
     command: "yum info {{ postgres_default_package }}"
     register: version_info_result
+    changed_when: false
   - set_fact:
       version_info: "{{ version_info_result.stdout }}"
 
