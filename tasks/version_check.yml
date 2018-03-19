@@ -7,7 +7,7 @@
     needs_install: true
     use_default_package: true
     needs_upgrade: false
-# NOTE: our overall strategy here is to make sure that the versuon we end up with
+# NOTE: our overall strategy here is to make sure that the version we end up with
 # is greater than or equal to that specified (if any). Downgrading or ensuring
 # an exact version are not supported use cases at this time.
 - name: get current postgres version
@@ -38,7 +38,7 @@
       version_info: "{{ version_info_result.stdout }}"
 
   # NOTE: regex_search() returns an array of matches, so we will need to use the 'first' filter to make use of the first (and only) value
-  - name: get version from info
+  - name: get default version from info
     set_fact: default_package_version={{ version_info | regex_search('(?P<test>\d+\.\d+.\d+)', '\\g<test>' ) | first }}
 
   - name: compare default_package_version
