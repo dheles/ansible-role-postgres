@@ -5,6 +5,9 @@
 - name: include os-specific variables
   include_vars: "{{ ansible_os_family }}.yml"
 
+- name: set version-specific vars
+  include: set_vars.yml
+
   # TODO: test against Debian
 - name: install prereqs
   package:
