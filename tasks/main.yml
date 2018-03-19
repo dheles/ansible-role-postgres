@@ -52,6 +52,7 @@
   postgresql_user:
     name:             "{{ item.user }}"
     password:         "{{ item.pass }}"
+    encrypted:        true
     db:               "{{ item.db     | default(omit) }}"
     role_attr_flags:  "{{ item.flags  | default(omit) }}"
   with_items:         "{{ postgres_users }}"
