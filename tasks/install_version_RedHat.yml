@@ -24,6 +24,6 @@
 - name: symlink the data directory for compatibility with the default package
   file:
     src:    "{{ postgres_data_directory }}"
-    dest:   "{{ postgres_data_directory_default }}"
+    dest:   "{{ postgres_default_data_directory }}"
     state:  link
   become: true
