@@ -20,8 +20,10 @@
   include: version_check.yml
 
 - name: initialize data directory, if needed
-  shell: "{{ postgresql_setup }} initdb"
-  failed_when: false
+  shell: "{{ postgres_bindir }}/{{ postgres_setup }} initdb"
+  register: result
+  failed_when: "('Data directory is not empty' not in result.stdout) and ('Initializing database' not in result.stdout)"
+  changed_when: "'Initializing database' in result.stdout"
 
 - name: adjust postgresql.conf for ip connections
   lineinfile:
