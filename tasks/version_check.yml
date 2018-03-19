@@ -1,0 +1,65 @@
+---
+- name: include os-specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: set defaults
+  set_fact:
+    needs_install: true
+    use_default_package: true
+    needs_upgrade: false
+# NOTE: our overall strategy here is to make sure that the version we end up with
+# is greater than or equal to that specified (if any). Downgrading or ensuring
+# an exact version are not supported use cases at this time.
+- name: get current postgres version
+  shell: "bash -lc 'postgres --version'"
+  register: postgres_version_result
+  changed_when: false
+  failed_when: false
+  become: false
+
+# NOTE: regex_search() returns an array of matches, so we will need to use the 'first' filter to make use of the first (and only) value
+- set_fact: returned_postgres_version={{ postgres_version_result.stdout | regex_replace('^$','0.0.0') | regex_search('(?P<test>\d+\.\d+(.\d+)*)', '\\g<test>' ) | first }}
+
+- name: test current postgres version for install
+  set_fact:
+    needs_install: false
+  when: "(returned_postgres_version | version_compare('0.0.0', '!=')) and (returned_postgres_version | version_compare(postgres_version, '>='))"
+
+- name: test current postgres version for upgrade
+  set_fact:
+    needs_upgrade: true
+  when: "(returned_postgres_version | version_compare('0.0.0', '!=')) and (returned_postgres_version | version_compare(postgres_version, '<'))"
+
+- block:
+  - name: get info on default package
+    command: "yum info {{ postgres_default_package }}"
+    register: version_info_result
+    changed_when: false
+  - set_fact:
+      version_info: "{{ version_info_result.stdout }}"
+
+  # NOTE: regex_search() returns an array of matches, so we will need to use the 'first' filter to make use of the first (and only) value
+  - name: get default version from info
+    set_fact: default_package_version={{ version_info | regex_search('(?P<test>\d+\.\d+.\d+)', '\\g<test>' ) | first }}
+
+  - name: compare default_package_version
+    set_fact:
+      use_default_package: false
+    when: default_package_version | version_compare(postgres_version, '<')
+
+  - name: install default postgres
+    include: install_default.yml
+    when: use_default_package
+
+  - name: set version-specific vars
+    include: set_vars.yml
+    vars:
+      upgrading: "{{ needs_upgrade }}"
+
+  # TODO: support OSes other than RedHat
+  - name: install specific postgres version
+    include: "install_version_{{ansible_os_family}}.yml"
+    when: not use_default_package
+
+  when: needs_install
+# end block

@@ -5,13 +5,8 @@
 - name: include os-specific variables
   include_vars: "{{ ansible_os_family }}.yml"
 
-- name: install postgres server on RedHat family
-  yum: name=postgresql-server state=present
-  when: ansible_os_family == 'RedHat'
-
-- name: install postgres server on Debian family
-  apt: name=postgresql-server state=present
-  when: ansible_os_family == 'Debian'
+- name: set version-specific vars
+  include: set_vars.yml
 
   # TODO: test against Debian
 - name: install prereqs
@@ -21,13 +16,14 @@
   with_items:
     - python-psycopg2
 
-- name: check if the postgres_data_directory is empty
-  command: "ls {{ postgres_data_directory }}"
-  register: postgres_data_directory_contents
+- name: run a version check and install the appropriate postgres
+  include: version_check.yml
 
-- name: initialize
-  shell: "postgresql-setup initdb"
-  when: postgres_data_directory_contents.stdout == ""
+- name: initialize data directory, if needed
+  shell: "{{ postgres_bindir }}/{{ postgres_setup }} initdb"
+  register: result
+  failed_when: "('Data directory is not empty' not in result.stdout) and ('Initializing database' not in result.stdout)"
+  changed_when: "'Initializing database' in result.stdout"
 
 - name: adjust postgresql.conf for ip connections
   lineinfile:
@@ -46,7 +42,7 @@
 
 - name: enable and start postgres service
   service:
-    name: postgresql
+    name: "{{ postgres_service }}"
     enabled: yes
     state: started
 
@@ -56,6 +52,7 @@
   postgresql_user:
     name:             "{{ item.user }}"
     password:         "{{ item.pass }}"
+    encrypted:        true
     db:               "{{ item.db     | default(omit) }}"
     role_attr_flags:  "{{ item.flags  | default(omit) }}"
   with_items:         "{{ postgres_users }}"
@@ -88,14 +85,12 @@
   become: false
 
   # NOTE: regex_search() returns an array of matches, so we will need to use the 'first' filter to make use of the first (and only) value
-- set_fact: returned_postgres_version={{ postgres_version_result.stdout | regex_replace('^$','0.0.0') | regex_search('(?P<test>\d+\.\d+.\d+)', '\\g<test>' ) | first }}
+- set_fact: returned_postgres_version={{ postgres_version_result.stdout | regex_replace('^$','0.0.0') | regex_search('(?P<test>\d+\.\d+(.\d+)*)', '\\g<test>' ) | first }}
 
-# NOTE: since we are installing from package and aren't specifying a version
-# just use this as a sanity check
 - name: test postgres version
   fail:
     msg: "attempted to install postgres, but something went wrong"
-  when: "not returned_postgres_version | version_compare('0.0.0', '>')"
+  when: "not returned_postgres_version | version_compare(postgres_version, '>')"
 
 - name: install extensions
   include: extensions.yml
