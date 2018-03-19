@@ -51,25 +51,14 @@
     include: install_default.yml
     when: use_default_package
 
-  - block:
-    - name: reset variables with version-9-specific values
-      set_fact:
-        postgresql_setup: "/usr/pgsql-{{ postgres_version_major }}.{{ postgres_version_minor }}/bin/postgresql{{ postgres_version_major }}{{ postgres_version_minor }}-setup"
-        postgres_service: "postgresql-{{ postgres_version_major }}.{{ postgres_version_minor }}"
-        postgres_data_directory_default: "{{ postgres_data_directory }}"
-        postgres_data_directory: "/var/lib/pgsql/{{ postgres_version_major }}.{{ postgres_version_minor }}/data"
-      when: postgres_version_major == 9
+  - name: set version-specific vars
+    include: set_vars.yml
+    vars:
+      upgrading: "{{ needs_upgrade }}"
 
-    - name: reset variables with version-10-specific values
-      set_fact:
-        postgresql_setup: "/usr/pgsql-{{ postgres_version_major }}/bin/postgresql-{{ postgres_version_major }}-setup"
-        postgres_service: "postgresql-{{ postgres_version_major }}"
-        postgres_version_patch: 2
-      when: postgres_version_major == 10
-
-    # TODO: support OSes other then RedHat
-    - name: install specific postgres version
-      include: "install_version_{{ansible_os_family}}.yml"
+  # TODO: support OSes other than RedHat
+  - name: install specific postgres version
+    include: "install_version_{{ansible_os_family}}.yml"
     when: not use_default_package
 
   when: needs_install
