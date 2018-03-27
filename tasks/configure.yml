@@ -1,0 +1,39 @@
+---
+- name: initialize data directory, if needed
+  shell: "{{ postgres_bindir }}/{{ postgres_setup }} initdb"
+  register: result
+  failed_when: "('Data directory is not empty' not in result.stdout) and ('Initializing database' not in result.stdout)"
+  changed_when: "'Initializing database' in result.stdout"
+
+- name: enable and start postgres service
+  service:
+    name: "{{ postgres_service }}"
+    enabled: yes
+    state: started
+  when: not upgrading
+
+- name: adjust postgresql.conf for ip connections
+  lineinfile:
+    dest:       "{{ postgres_data_directory }}/postgresql.conf"
+    regexp:    '^listen_addresses'
+    line:       "listen_addresses = '{{ postgres_listen_addresses }}'"
+    state:      present
+
+# NOTE: see note with postgres_hba_template variable definition in defaults
+- name: template pg_hba.conf
+  template:
+    src:  "{{ postgres_hba_template }}"
+    dest: "{{ postgres_data_directory }}/pg_hba.conf"
+  notify: reload postgresql
+  when: postgres_hba_template != ""
+
+- name: add pg_hba entries
+  include: pg_hba_entry.yml
+  vars:
+    type:     "{{ item.type}}"
+    database: "{{ item.database }}"
+    user:     "{{ item.user }}"
+    address:  "{{ item.address | default('') }}"
+    method:   "{{ item.method }}"
+    state:    "present"
+  with_items: "{{ postgres_hba_entries }}"

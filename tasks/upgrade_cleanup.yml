@@ -1,0 +1,33 @@
+---
+- name: clean up after upgrade
+  block:
+  # NOTE: without help, successful yum uninstall result interpreted as failure
+  - name: uninstall old postgres
+    package:
+      name: "{{ old_package }}"
+      state: absent
+    register: uninstall_result
+    failed_when: "uninstall_result.rc != 0"
+
+  - name: prepare cleanup scripts
+    file:
+      dest: "~/{{ item }}"
+      owner: "{{ postgres_admin_user }}"
+      group: "{{ postgres_admin_user }}"
+      mode: "u+x"
+    become_user: "{{ postgres_admin_user }}"
+    with_items: "{{ postgres_cleanup_scripts }}"
+
+  - name: run cleanup scripts
+    command: "~/{{ item }}"
+    become_user: "{{ postgres_admin_user }}"
+    with_items: "{{ postgres_cleanup_scripts }}"
+
+  - name: clean up cleanup scripts
+    file:
+      dest: "~/{{ item }}"
+      state: absent
+    become_user: "{{ postgres_admin_user }}"
+    with_items: "{{ postgres_cleanup_scripts }}"
+
+  when: postgres_upgrade_cleanup

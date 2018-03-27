@@ -19,4 +19,4 @@
 
 # NOTE: while this can be a bit redundant, it's needed for db_refresh playbooks
 # (at least as i currently write them)
-- meta: flush_handlers
+# - meta: flush_handlers

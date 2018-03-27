@@ -1,7 +1,4 @@
 ---
-- name: set version-specific vars
-  include: set_vars.yml
-
 - name: reload postgresql
   shell: "bash -lc '{{ postgres_bindir }}/pg_ctl reload -D {{ postgres_data_directory }}'"
   become: yes

@@ -1,4 +1,13 @@
 ---
+# NOTE: these tasks require the following vars, presumably passed in or set by
+# version_check. therefore, calling it directly (using tasks_from or the like)
+# will not work.
+# vars:
+#   upgrading: "{{ needs_upgrade }}"
+#   version_major: "{{ postgres_version_major }}"
+#   version_minor: "{{ postgres_version_minor }}"
+#   version_patch: "{{ postgres_version_patch }}"
+
 # NOTE: the intent here is to set version-specific variables for postgres
 # components that vary by name and location. depending on the activity being
 # performed, this may be based on the currently-installed version or the version
@@ -8,7 +17,6 @@
 - name: set defaults
   set_fact:
     default_package: false
-    upgrading: false
 
 # TODO: support non-RedHat OSes
 - name: determine if the default package is installed
@@ -26,24 +34,27 @@
     postgres_package:           "{{ postgres_default_package }}"
     postgres_setup:             "{{ postgres_default_setup }}"
     postgres_service:           "{{ postgres_default_service }}"
+    postgres_contrib:           "{{ postgres_default_contrib }}"
   when: default_package
 
 - name: reset variables with version-9-specific values
   set_fact:
-    postgres_data_directory:  "/var/lib/pgsql/{{ postgres_version_major }}.{{ postgres_version_minor }}/data"
-    postgres_bindir:          "/usr/pgsql-{{ postgres_version_major }}.{{ postgres_version_minor }}/bin"
-    postgres_package:         "postgresql{{ postgres_version_major }}{{ postgres_version_minor }}-server"
-    postgres_setup:           "postgresql{{ postgres_version_major }}{{ postgres_version_minor }}-setup"
-    postgres_service:         "postgresql-{{ postgres_version_major }}.{{ postgres_version_minor }}"
+    postgres_data_directory:  "/var/lib/pgsql/{{ version_major }}.{{ version_minor }}/data"
+    postgres_bindir:          "/usr/pgsql-{{ version_major }}.{{ version_minor }}/bin"
+    postgres_package:         "postgresql{{ version_major }}{{ version_minor }}-server"
+    postgres_setup:           "postgresql{{ version_major }}{{ version_minor }}-setup"
+    postgres_service:         "postgresql-{{ version_major }}.{{ version_minor }}"
     postgres_repo:            "{{ postgres_repo | default(postgres_repo_9) }}"
-  when: postgres_version_major == 9 and ((not default_package) or upgrading)
+    postgres_contrib:         "postgresql{{ version_major }}{{ version_minor }}-contrib"
+  when: "{{ version_major }} == 9 and ((not {{ default_package }}) or {{ upgrading }})"
 
 - name: reset variables with version-10-specific values
   set_fact:
-    postgres_data_directory:  "/var/lib/pgsql/{{ postgres_version_major }}/data"
-    postgres_bindir:          "/usr/pgsql-{{ postgres_version_major }}/bin"
-    postgres_package:         "postgresql{{ postgres_version_major }}-server"
-    postgres_setup:           "postgresql-{{ postgres_version_major }}-setup"
-    postgres_service:         "postgresql-{{ postgres_version_major }}"
+    postgres_data_directory:  "/var/lib/pgsql/{{ version_major }}/data"
+    postgres_bindir:          "/usr/pgsql-{{ version_major }}/bin"
+    postgres_package:         "postgresql{{ version_major }}-server"
+    postgres_setup:           "postgresql-{{ version_major }}-setup"
+    postgres_service:         "postgresql-{{ version_major }}"
     postgres_repo:            "{{ postgres_repo | default(postgres_repo_10) }}"
-  when: postgres_version_major == 10 and ((not default_package) or upgrading)
+    postgres_contrib:         "postgresql{{ version_major }}-contrib"
+  when: "{{ version_major }} == 10 and ((not {{ default_package }}) or {{ upgrading }})"

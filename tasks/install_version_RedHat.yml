@@ -20,10 +20,3 @@
   template:
     src: "postgres.sh.j2"
     dest: "/etc/profile.d/postgres.sh"
-
-- name: symlink the data directory for compatibility with the default package
-  file:
-    src:    "{{ postgres_data_directory }}"
-    dest:   "{{ postgres_default_data_directory }}"
-    state:  link
-  become: true

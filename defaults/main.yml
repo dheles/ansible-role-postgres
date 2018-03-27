@@ -53,3 +53,7 @@ postgres_backup_args:
 
 postgres_extra_packages:  []
 postgres_extensions:      []
+
+postgres_upgrade_ok:      false
+postgres_upgrade_cleanup: false
+postgres_cleanup_scripts: []
