@@ -1,4 +1,7 @@
 ---
+- name: include os-specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
 # TODO: cover all 7 formats: https://www.postgresql.org/docs/9.3/static/auth-pg-hba-conf.html
 # vars:
 # - (connection) type

@@ -1,5 +1,10 @@
 ---
+- name: restart postgresql
+  shell: "{{ postgres_bindir }}/pg_ctl restart -D {{ postgres_data_directory }}"
+  become: yes
+  become_user: "{{ postgres_admin_user }}"
+
 - name: reload postgresql
-  shell: "bash -lc '{{ postgres_bindir }}/pg_ctl reload -D {{ postgres_data_directory }}'"
+  shell: "{{ postgres_bindir }}/pg_ctl reload -D {{ postgres_data_directory }}"
   become: yes
   become_user: "{{ postgres_admin_user }}"

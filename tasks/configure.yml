@@ -5,19 +5,20 @@
   failed_when: "('Data directory is not empty' not in result.stdout) and ('Initializing database' not in result.stdout)"
   changed_when: "'Initializing database' in result.stdout"
 
-- name: enable and start postgres service
-  service:
-    name: "{{ postgres_service }}"
-    enabled: yes
-    state: started
-  when: not upgrading
-
 - name: adjust postgresql.conf for ip connections
   lineinfile:
     dest:       "{{ postgres_data_directory }}/postgresql.conf"
     regexp:    '^listen_addresses'
     line:       "listen_addresses = '{{ postgres_listen_addresses }}'"
     state:      present
+  # notify: restart postgresql
+
+- name: enable and start postgres service
+  service:
+    name: "{{ postgres_service }}"
+    enabled: yes
+    state: started
+  when: not upgrading
 
 # NOTE: see note with postgres_hba_template variable definition in defaults
 - name: template pg_hba.conf
@@ -37,3 +38,4 @@
     method:   "{{ item.method }}"
     state:    "present"
   with_items: "{{ postgres_hba_entries }}"
+  notify: reload postgresql
