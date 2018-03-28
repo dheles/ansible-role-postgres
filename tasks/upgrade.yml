@@ -1,0 +1,133 @@
+---
+# NOTE: these tasks require the following vars, presumably passed in or set by
+# version_check. therefore, calling it directly (using tasks_from or the like)
+# will not work.
+# vars:
+#   old_version:        "{{ returned_postgres_version }}"
+#   old_data_directory: "{{ postgres_data_directory }}"
+#   old_bindir:         "{{ postgres_bindir }}"
+#   old_package:        "{{ postgres_package }}"
+#   old_service:        "{{ postgres_service }}"
+#   new_version:        "{{ new_postgres_version }}"
+#   new_data_directory: "{{ postgres_data_directory }}"
+#   new_bindir:         "{{ postgres_bindir }}"
+#   new_service:        "{{ postgres_service }}"
+
+# TODO: Debian - https://doc.ispsystem.com/index.php/How_to_change_PostgreSQL_version
+- name: install postgresql-contrib to get pg_upgrade module
+  become: true
+  package:
+    name: "{{ postgres_contrib }}"
+    state: present
+
+- name: set defaults
+  set_fact:
+    upgrade_compatible: false
+    upgrade_successful: false
+
+- block:
+  # TODO: detect only work around when needed
+  # NOTE: https://dba.stackexchange.com/a/86929
+  - name: unix_socket_directory workaround
+    shell: |
+      mv {{ postgres_default_bindir }}/pg_ctl{,-orig}
+      echo '#!/bin/bash' > {{ postgres_default_bindir }}/pg_ctl
+      echo '"$0"-orig "${@/unix_socket_directory/unix_socket_directories}"' >> {{ postgres_default_bindir }}/pg_ctl
+      chmod +x {{ postgres_default_bindir }}/pg_ctl
+    when: old_package == postgres_default_package
+
+  - name: check pg_upgrade
+    command: >
+      {{ new_bindir }}/pg_upgrade
+      --old-bindir="{{ old_bindir }}"
+      --old-datadir="{{ old_data_directory }}"
+      --new-bindir="{{ new_bindir }}"
+      --new-datadir="{{ new_data_directory }}"
+      --check
+    args:
+      chdir: "~"
+    become_user: "{{ postgres_admin_user }}"
+    register: check_result
+
+  - name: set flag based on check result
+    set_fact:
+      upgrade_compatible: true
+    when: "'Clusters are compatible' in check_result.stdout"
+
+  - name: fail if incompatible for automated upgrade
+    fail:
+      msg: "The provided configuration settings would require an upgrade,
+            but the available automation cannot complete it.
+            Details: {{ check_result.stdout }}"
+    when: not upgrade_compatible
+
+  - name: proceed with upgrade
+    block:
+    - name: stop existing postgres services
+      service:
+        name: "{{ item }}"
+        state: stopped
+      with_items:
+        - "{{ old_service }}"
+        - "{{ new_service }}"
+
+    - name: run pg_upgrade
+      command: >
+        {{ new_bindir }}/pg_upgrade
+        --old-bindir="{{ old_bindir }}"
+        --old-datadir="{{ old_data_directory }}"
+        --new-bindir="{{ new_bindir }}"
+        --new-datadir="{{ new_data_directory }}"
+      args:
+        chdir: "~"
+      become_user: "{{ postgres_admin_user }}"
+      register: upgrade_result
+
+    - name: set flag based on upgrade_result
+      set_fact:
+        upgrade_successful: true
+      when: "'Upgrade Complete' in upgrade_result.stdout"
+
+    - name: get cleanup scripts from upgrade result
+      set_fact: postgres_cleanup_scripts={{ upgrade_result.stdout | regex_findall('(?P<test>\w+.sh)', '\\g<test>' ) }}
+
+    when: upgrade_compatible and postgres_upgrade_ok
+
+  - name: report incomplete upgrade
+    fail:
+      msg: "The provided configuration settings would require an upgrade,
+            which the automation could perform, but which is prohibited.
+            To run the upgrade, set 'postgres_upgrade_ok' to true and re-run"
+    when: upgrade_compatible and not postgres_upgrade_ok
+
+  always:
+  - name: detect unix_socket_directory workaround
+    stat:
+      path: "{{ postgres_default_bindir }}/pg_ctl-orig"
+    register: workaround
+
+  - name: undo unix_socket_directory workaround
+    shell: "mv -f {{ postgres_default_bindir }}/pg_ctl{-orig,}"
+    when: workaround.stat.exists
+
+- name: perform post-upgrade steps
+  block:
+  # NOTE: don't attempt to start the new service until the workaround has been removed
+  - name: enable and start postgres service
+    service:
+      name: "{{ new_service }}"
+      enabled: yes
+      state: started
+
+  - name: clean up after upgrade
+    include: upgrade_cleanup.yml
+    when: postgres_upgrade_cleanup
+
+  - name: report incomplete cleanup
+    debug:
+      msg: "the following cleanup script is recommended, but has not been run
+            automatically, due to configuration settings: {{ item }}"
+    with_items: "{{ postgres_cleanup_scripts }}"
+    when: not postgres_upgrade_cleanup
+
+  when: upgrade_successful

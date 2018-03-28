@@ -1,11 +1,15 @@
 ---
+- name: replace generic contrib package with a versioned package
+  set_fact:
+    versioned_packages: "{{ postgres_extra_packages | map('replace', 'postgresql-contrib', postgres_contrib) | list }}"
+
 - name: install extra packages
   become: true
   package:
     name: "{{ item }}"
     state: present
   with_items:
-  - "{{ postgres_extra_packages }}"
+  - "{{ versioned_packages }}"
 
 - name: install and enable extensions for databases
   become: true

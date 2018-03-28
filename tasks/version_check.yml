@@ -20,15 +20,40 @@
 # NOTE: regex_search() returns an array of matches, so we will need to use the 'first' filter to make use of the first (and only) value
 - set_fact: returned_postgres_version={{ postgres_version_result.stdout | regex_replace('^$','0.0.0') | regex_search('(?P<test>\d+\.\d+(.\d+)*)', '\\g<test>' ) | first }}
 
+- name: parse version components from returned_postgres_version to pass to set_vars.yml
+  set_fact:
+    version_components: "{{ returned_postgres_version.split('.') }}"
+
+- name: set version-specific vars
+  include: set_vars.yml
+  vars:
+    upgrading: false
+    version_major: "{{ version_components[0] | default(0) }}"
+    version_minor: "{{ version_components[1] | default(0) }}"
+    version_patch: "{{ version_components[2] | default(0) }}"
+
 - name: test current postgres version for install
   set_fact:
     needs_install: false
   when: "(returned_postgres_version | version_compare('0.0.0', '!=')) and (returned_postgres_version | version_compare(postgres_version, '>='))"
 
+# TODO: make sure minor upgrades are handled appropriately:
+# https://www.postgresql.org/docs/9.6/static/upgrading.html
 - name: test current postgres version for upgrade
   set_fact:
     needs_upgrade: true
   when: "(returned_postgres_version | version_compare('0.0.0', '!=')) and (returned_postgres_version | version_compare(postgres_version, '<'))"
+
+- name: set up for upgrade before proceeding
+  block:
+  - name: set vars for the old version
+    set_fact:
+      old_version:        "{{ returned_postgres_version }}"
+      old_data_directory: "{{ postgres_data_directory }}"
+      old_bindir:         "{{ postgres_bindir }}"
+      old_package:        "{{ postgres_package }}"
+      old_service:        "{{ postgres_service }}"
+  when: needs_upgrade
 
 - block:
   - name: get info on default package
@@ -55,6 +80,10 @@
     include: set_vars.yml
     vars:
       upgrading: "{{ needs_upgrade }}"
+      version_major: "{{ postgres_version_major }}"
+      version_minor: "{{ postgres_version_minor }}"
+      version_patch: "{{ postgres_version_patch }}"
+
 
   # TODO: support OSes other than RedHat
   - name: install specific postgres version
@@ -63,3 +92,46 @@
 
   when: needs_install
 # end block
+
+- name: configure installation
+  include: configure.yml
+  vars:
+    upgrading: "{{ needs_upgrade }}"
+
+- block:
+  - name: get new postgres version
+    shell: "bash -lc '{{ postgres_bindir }}/postgres --version'"
+    register: postgres_version_result
+    changed_when: false
+    failed_when: false
+    become: false
+
+  # NOTE: regex_search() returns an array of matches, so we will need to use the 'first' filter to make use of the first (and only) value
+  - set_fact: new_postgres_version={{ postgres_version_result.stdout | regex_replace('^$','0.0.0') | regex_search('(?P<test>\d+\.\d+(.\d+)*)', '\\g<test>' ) | first }}
+
+  - name: parse version components from new_postgres_version to pass to set_vars.yml
+    set_fact:
+      version_components: "{{ new_postgres_version.split('.') }}"
+
+  - name: get vars for new postgres version
+    include: set_vars.yml
+    vars:
+      upgrading: true
+      version_major: "{{ version_components[0] | default(0) }}"
+      version_minor: "{{ version_components[1] | default(0) }}"
+      version_patch: "{{ version_components[2] | default(0) }}"
+
+  - name: "check and possibly perform ({{ postgres_upgrade_ok }}) upgrade"
+    include: upgrade.yml
+    vars:
+      # NOTE: these should have been set earlier
+      # old_version:        "{{ returned_postgres_version }}"
+      # old_data_directory: "{{ postgres_data_directory }}"
+      # old_bindir:         "{{ postgres_bindir }}"
+      # old_package:        "{{ postgres_package }}"
+      # old_service:        "{{ postgres_service }}"
+      new_version:        "{{ new_postgres_version }}"
+      new_data_directory: "{{ postgres_data_directory }}"
+      new_bindir:         "{{ postgres_bindir }}"
+      new_service:        "{{ postgres_service }}"
+  when: needs_upgrade

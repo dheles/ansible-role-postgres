@@ -5,9 +5,6 @@
 - name: include os-specific variables
   include_vars: "{{ ansible_os_family }}.yml"
 
-- name: set version-specific vars
-  include: set_vars.yml
-
   # TODO: test against Debian
 - name: install prereqs
   package:
@@ -18,33 +15,6 @@
 
 - name: run a version check and install the appropriate postgres
   include: version_check.yml
-
-- name: initialize data directory, if needed
-  shell: "{{ postgres_bindir }}/{{ postgres_setup }} initdb"
-  register: result
-  failed_when: "('Data directory is not empty' not in result.stdout) and ('Initializing database' not in result.stdout)"
-  changed_when: "'Initializing database' in result.stdout"
-
-- name: adjust postgresql.conf for ip connections
-  lineinfile:
-    dest:       "{{ postgres_data_directory }}/postgresql.conf"
-    regexp:    '^listen_addresses'
-    line:       "listen_addresses = '{{ postgres_listen_addresses }}'"
-    state:      present
-
-# NOTE: see note with postgres_hba_template variable definition in defaults
-- name: template pg_hba.conf
-  template:
-    src:  "{{ postgres_hba_template }}"
-    dest: "{{ postgres_data_directory }}/pg_hba.conf"
-  notify: reload postgresql
-  when: postgres_hba_template != ""
-
-- name: enable and start postgres service
-  service:
-    name: "{{ postgres_service }}"
-    enabled: yes
-    state: started
 
 - name: create database users
   become_user:        "{{ postgres_admin_user }}"
@@ -67,19 +37,8 @@
   with_items:   "{{ postgres_databases }}"
   when: postgres_create_databases
 
-- name: add pg_hba entries
-  include: pg_hba_entry.yml
-  vars:
-    type:     "{{ item.type}}"
-    database: "{{ item.database }}"
-    user:     "{{ item.user }}"
-    address:  "{{ item.address | default('') }}"
-    method:   "{{ item.method }}"
-    state:    "present"
-  with_items: "{{ postgres_hba_entries }}"
-
 - name: get postgres version
-  shell: "bash -lc 'postgres --version'"
+  shell: "bash -lc '{{ postgres_bindir }}/postgres --version'"
   register: postgres_version_result
   changed_when: false
   become: false
@@ -89,7 +48,7 @@
 
 - name: test postgres version
   fail:
-    msg: "attempted to install postgres, but something went wrong"
+    msg: "attempted to install postgres {{ postgres_version }}, but something went wrong"
   when: "not returned_postgres_version | version_compare(postgres_version, '>')"
 
 - name: install extensions

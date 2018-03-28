@@ -5,7 +5,8 @@ postgres_repo_9:                  "https://download.postgresql.org/pub/repos/yum
 postgres_repo_10:                 "https://download.postgresql.org/pub/repos/yum/{{ postgres_version_major }}/redhat/rhel-7-x86_64/pgdg-centos{{ postgres_version_major }}-{{ postgres_version_major }}-{{ postgres_repo_version_10 }}.noarch.rpm"
 # NOTE: these defaults may be overridden for version-specific variants
 postgres_default_data_directory:  "/var/lib/pgsql/data"
-postgres_default_bindir:          "/bin"
+postgres_default_bindir:          "/usr/bin"
 postgres_default_package:         "postgresql-server"
+postgres_default_contrib:         "postgresql-contrib"
 postgres_default_setup:           "postgresql-setup"
 postgres_default_service:         "postgresql"
