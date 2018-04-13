@@ -17,6 +17,7 @@
     line:         "{{ type }}   {{ database }}   {{ user }}   {{ address | default('') | regex_replace('^(?P<ip>(?:[0-9]{1,3}\\.){3}[0-9]{1,3})$', '\\g<ip>/32') }}   {{ method }}"
     state:        "{{ state }}"
     insertbefore: BOF
+  become: true
   become_user: "{{ postgres_admin_user }}"
   notify: reload postgresql
 

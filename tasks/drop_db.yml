@@ -6,4 +6,5 @@
   postgresql_db:
     name: "{{ database }}"
     state: "absent"
+  become: true
   become_user: "{{ postgres_admin_user }}"
