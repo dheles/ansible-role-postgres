@@ -9,6 +9,7 @@
   postgresql_db:
     name: "{{ database }}"
     state: "absent"
+  become: true
   become_user: "{{ postgres_admin_user }}"
 
 - name: recreate db
@@ -17,12 +18,14 @@
     state: "present"
     owner: "{{ user }}"
     encoding: "{{ encoding | default(postgres_default_encoding) }}"
+  become: true
   become_user: "{{ postgres_admin_user }}"
 
 - name: restore db from file
   shell: "pg_restore -U {{ user }} -d {{ database }} -n public -O < {{ file }}"
 
 - name: check restored db
+  become: true
   become_user: "{{ postgres_admin_user }}"
   shell: "psql -l"
   register: result
