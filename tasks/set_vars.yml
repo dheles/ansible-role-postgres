@@ -14,6 +14,9 @@
 # to be installed.
 # additionally, some flags are set for the benefit of such activities
 
+- name: include os-specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
 - name: set defaults
   set_fact:
     default_package: false
@@ -32,6 +35,7 @@
     postgres_data_directory:    "{{ postgres_default_data_directory }}"
     postgres_bindir:            "{{ postgres_default_bindir }}"
     postgres_package:           "{{ postgres_default_package }}"
+    postgres_client:            "{{ postgres_default_client }}"
     postgres_setup:             "{{ postgres_default_setup }}"
     postgres_service:           "{{ postgres_default_service }}"
     postgres_contrib:           "{{ postgres_default_contrib }}"
@@ -42,6 +46,7 @@
     postgres_data_directory:  "/var/lib/pgsql/{{ version_major }}.{{ version_minor }}/data"
     postgres_bindir:          "/usr/pgsql-{{ version_major }}.{{ version_minor }}/bin"
     postgres_package:         "postgresql{{ version_major }}{{ version_minor }}-server"
+    postgres_client:          "postgresql{{ version_major }}{{ version_minor }}"
     postgres_setup:           "postgresql{{ version_major }}{{ version_minor }}-setup"
     postgres_service:         "postgresql-{{ version_major }}.{{ version_minor }}"
     postgres_repo:            "{{ postgres_repo | default(postgres_repo_9) }}"
@@ -53,6 +58,7 @@
     postgres_data_directory:  "/var/lib/pgsql/{{ version_major }}/data"
     postgres_bindir:          "/usr/pgsql-{{ version_major }}/bin"
     postgres_package:         "postgresql{{ version_major }}-server"
+    postgres_client:          "postgresql{{ version_major }}"
     postgres_setup:           "postgresql-{{ version_major }}-setup"
     postgres_service:         "postgresql-{{ version_major }}"
     postgres_repo:            "{{ postgres_repo | default(postgres_repo_10) }}"

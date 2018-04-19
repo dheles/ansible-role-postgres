@@ -7,6 +7,7 @@ postgres_repo_10:                 "https://download.postgresql.org/pub/repos/yum
 postgres_default_data_directory:  "/var/lib/pgsql/data"
 postgres_default_bindir:          "/usr/bin"
 postgres_default_package:         "postgresql-server"
+postgres_default_client:          "postgresql"
 postgres_default_contrib:         "postgresql-contrib"
 postgres_default_setup:           "postgresql-setup"
 postgres_default_service:         "postgresql"
