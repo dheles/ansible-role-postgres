@@ -55,3 +55,7 @@
 
 - name: install extensions
   include: extensions.yml
+  vars:
+    databases:      "{{ postgres_databases }}"
+    extra_packages: "{{ postgres_extra_packages }}"
+    extensions:     "{{ postgres_extensions }}"

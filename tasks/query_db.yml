@@ -21,7 +21,6 @@
 - name: execute query from file
   shell: "psql -U {{ user }} {{ database }} < {{ remote_query_file }}"
   register: result
-  become: yes
 
 - name: remove the sql file from the server
   file:

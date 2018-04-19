@@ -2,7 +2,7 @@
 # vars:
 #   database: "{{ db_name }}"
 #   user: "{{ db_user }}"
-#   file: "{{ db_backup_file }}"
+#   backup_file: "{{ db_backup_file }}"
 #   encoding: "{{ db_encoding }}"
 
 - name: drop db
@@ -21,8 +21,50 @@
   become: true
   become_user: "{{ postgres_admin_user }}"
 
+# TODO: fragile workaround to compensate for the fact that I cannot
+# get extensions to backup and restore properly. fix.
+- name: derive the name the schema file from the backup file
+  set_fact:
+    schema_file: "{{ backup_file | replace('.sql', '') }}_schema.sql"
+
+- name: make sure the schema file is present
+  stat:
+    path: "{{ schema_file }}"
+  register: schema
+
+- name: manually create extensions
+  block:
+  - name: get contents of schema file
+    slurp:
+      src: "{{ schema_file }}"
+    register: schema_contents
+    no_log: true # not insecure, just verbose
+
+  - name: find extensions in the schema
+    set_fact: restored_extensions={{ schema_contents['content'] | b64decode | regex_findall('CREATE EXTENSION IF NOT EXISTS\s+(?P<test>\w+)', '\\g<test>' ) }}
+
+  # NOTE: the extensions task is expecting databases in a hash
+  - name: transform database name into required format
+    set_fact:
+      restored_databases:
+        - name:     "{{ database }}"
+          encoding: "{{ postgres_default_encoding }}"
+          owner:    "{{ user }}"
+
+  # TODO: in our current use cases, any needed extra packages should already
+  # be installed. this will likely not always be the case. hopefully, we will
+  # find a way to avoid this workaround by the time we have other conditions
+  - name: install extensions
+    include: extensions.yml
+    vars:
+      databases: "{{ restored_databases }}"
+      extensions: "{{ restored_extensions }}"
+      extra_packages: []
+    when: restored_extensions | length | int > 0
+  when: schema.stat.exists
+
 - name: restore db from file
-  shell: "pg_restore -U {{ user }} -d {{ database }} -n public -O < {{ file }}"
+  shell: "pg_restore -U {{ user }} -d {{ database }} -n public -O < {{ backup_file }}"
 
 - name: check restored db
   become: true
