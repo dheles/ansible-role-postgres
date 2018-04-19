@@ -9,6 +9,18 @@
     register: uninstall_result
     failed_when: "uninstall_result.rc != 0"
 
+  # NOTE: without help, successful yum uninstall result interpreted as failure
+  - name: uninstall old postgres client
+    package:
+      name: "{{ old_client }}"
+      state: absent
+    register: uninstall_result
+    failed_when: "uninstall_result.rc != 0"
+
+  - name: reinstall postgres client to symlink tools into their expected places
+    command: "yum reinstall {{ postgres_client }} -y"
+    when: ansible_os_family == 'RedHat'
+
   - name: prepare cleanup scripts
     file:
       dest: "~/{{ item }}"

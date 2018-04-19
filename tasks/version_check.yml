@@ -52,6 +52,7 @@
       old_data_directory: "{{ postgres_data_directory }}"
       old_bindir:         "{{ postgres_bindir }}"
       old_package:        "{{ postgres_package }}"
+      old_client:         "{{ postgres_client }}"
       old_service:        "{{ postgres_service }}"
   when: needs_upgrade
 
