@@ -2,7 +2,18 @@
 # vars:
 #   database: "{{ db_name }}"
 #   user: "{{ db_user }}"
-#   file: "{{ db_backup_file }}"
+#   backup_file: "{{ db_backup_file }}"
+
+# NOTE: in addition to the actual backup, take a backup of the schema, as well.
+# this is useful for some downstream workarounds, as in restore_db.yml
+# TODO: current approach requires tasks that use the schema file know
+# this naming convention. fix.
+- name: derive the name the schema file from the backup file
+  set_fact:
+      schema_file: "{{ backup_file | replace('.sql', '') }}_schema.sql"
+
+- name: backup schema
+  shell: "pg_dump -s -U {{ user }} {{ database }} > {{ schema_file }}"
 
 - name: backup database
-  shell: "pg_dump {% for arg in postgres_backup_args %}--{{ arg }} {% endfor %}-U {{ user }} {{ database }} > {{ file }}"
+  shell: "pg_dump {% for arg in postgres_backup_args %}--{{ arg }} {% endfor %}-U {{ user }} {{ database }} > {{ backup_file }}"
