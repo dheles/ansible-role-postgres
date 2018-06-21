@@ -1,0 +1,12 @@
+---
+- name: make sure the proper vars are set
+  set_fact:
+    path_ok: true
+  when: postgres_version_major == 10 or (postgres_version_major != 0 and postgres_version_minor != 0)
+
+- name: set PSQL_HOME for all users and put the executable directory in everyone's PATH
+  template:
+    src: "postgres.sh.j2"
+    dest: "/etc/profile.d/postgres.sh"
+  become: true
+  when: path_ok is defined and path_ok
