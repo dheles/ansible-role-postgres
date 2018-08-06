@@ -16,8 +16,5 @@
     name: "{{ postgres_package }}"
     state: present
 
-# TODO: replace with path task
 - name: set PSQL_HOME for all users and put the executable directory in everyone's PATH
-  template:
-    src: "postgres.sh.j2"
-    dest: "/etc/profile.d/postgres.sh"
+  include: path.yml
