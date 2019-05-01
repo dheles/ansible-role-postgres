@@ -8,6 +8,7 @@ postgres_data_directory:    "{{ postgres_default_data_directory }}"
 postgres_bindir:            "{{ postgres_default_bindir }}"
 postgres_setup:             "{{ postgres_default_setup }}"
 postgres_service:           "{{ postgres_default_service }}"
+postgres_legacy:            false # currently used to support Centos6
 postgres_admin_user:        "{{ db_admin_user   | default('postgres') }}"
 postgres_create_users:      "{{ db_create_users | default(false) }}"
 postgres_users:             "{{ db_users        | default(default_db_users) }}"
