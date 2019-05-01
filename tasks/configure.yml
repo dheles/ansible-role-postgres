@@ -1,6 +1,13 @@
 ---
+- name: determine init command for environment
+  set_fact:
+    init_command: "{{ postgres_bindir }}/{{ postgres_setup }} initdb"
+- set_fact:
+    init_command: "service {{ postgres_service }} initdb"
+  when: postgres_legacy
+
 - name: initialize data directory, if needed
-  shell: "{{ postgres_bindir }}/{{ postgres_setup }} initdb"
+  shell: "{{ init_command }}"
   register: result
   failed_when: "('Data directory is not empty' not in result.stdout) and ('Initializing database' not in result.stdout)"
   changed_when: "'Initializing database' in result.stdout"
